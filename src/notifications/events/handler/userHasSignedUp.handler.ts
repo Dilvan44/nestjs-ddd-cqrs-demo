@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IEventHandler } from '@nestjs/cqrs';
+import { Inject } from '@nestjs/common';
+import { EventsHandler, IEventHandler } from '@nestjs/cqrs';
 import { UserHasSignedUpEvent } from '../../../user_context/user_aggregate/events/userHasSignedUp.event';
 import { IEmailClient } from '../../ports/emailClient.interface';
 
-@Injectable()
+@EventsHandler(UserHasSignedUpEvent)
 export class UserHasSignedUpHandler
   implements IEventHandler<UserHasSignedUpEvent>
 {

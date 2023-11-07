@@ -4,19 +4,31 @@ import * as request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { SignUpDto } from '../src/user_context/interfaces/signUp.dto';
 import { PrismaService } from '../src/prisma_module/prisma.service';
+import { IEmailClient } from '../src/notifications/ports/emailClient.interface';
+import { NotificationsModule } from '../src/notifications/notification.module';
 
 // Remember to seed the database before running the e2e tests.
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let emailClient: IEmailClient;
+
+  const mockEmailClient: IEmailClient = {
+    sendWelcomeEmail: jest.fn(),
+    sendWellDoneEmail: jest.fn(),
+  };
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+      imports: [AppModule, NotificationsModule],
+    })
+      .overrideProvider('EmailClient')
+      .useValue(mockEmailClient)
+      .compile();
 
     prisma = moduleFixture.get<PrismaService>(PrismaService);
     app = moduleFixture.createNestApplication();
+    emailClient = moduleFixture.get<IEmailClient>('EmailClient');
     await app.init();
   });
 
@@ -55,7 +67,11 @@ describe('AppController (e2e)', () => {
         .expect((res) => {
           expect(res.body.email).toEqual(inputDto.email);
           expect(res.body.id).toBeDefined();
+          expect(emailClient.sendWelcomeEmail).toBeCalledTimes(1);
         });
+      // .expect(() => {
+      //   expect(emailClient.sendWelcomeEmail).toBeCalledTimes(1);
+      // });
     });
     it('should throw an conflict error if the user already exists', () => {
       const inputDto: SignUpDto = {
